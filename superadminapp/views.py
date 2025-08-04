@@ -16,8 +16,12 @@ def register_view(request):
                 username=form.cleaned_data['username'],
                 email=form.cleaned_data['email'],
                 password=form.cleaned_data['password'],
-                roles='guest'  # default role or handle later
+                roles='student'  # default role or handle later
             )
+            
+            user.is_verified = True
+            user.is_approved = True
+            user.is_active = True
             user.save()
             messages.success(request, "Registration successful. Please login.")
             return redirect('login')
