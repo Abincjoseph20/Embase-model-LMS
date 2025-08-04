@@ -33,7 +33,7 @@ class MyAccountManager(BaseUserManager):
             username=username,
             email=email,
             password=password,
-            roles='admin'
+            roles='superadmin'
         )
         user.is_admin = True
         user.is_active = True
@@ -70,7 +70,7 @@ class Account(AbstractBaseUser):
     phone_number = models.CharField(max_length=20, blank=True, null=True)
     user_key = models.CharField(max_length=10, unique=True, editable=False, null=True, blank=True)
     otp = models.CharField(max_length=6, blank=True, null=True,default="student")
-    roles = models.CharField(choices=CATEGORY_CHOICE,max_length=20)
+    roles = models.CharField(choices=CATEGORY_CHOICE,max_length=20,default='superadmin')
     address = models.TextField(blank=True, null=True)
     is_verified = models.BooleanField(default=False)
 
