@@ -1,3 +1,32 @@
 <h1>Welcome to dashboard !</h1>
 
 <a href="{% url "admin_register" %}"  >admin reg</a >
+
+<h2>All Users</h2>
+
+{% if users %}
+  <table border="1" cellpadding="8" cellspacing="0">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Role</th>
+        <th>Status</th>
+        <th>Date Joined</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in users %}
+        <tr>
+          <td>{{ user.email }}</td>
+          <td>{{ user.username }}</td>
+          <td>{{ user.roles }}</td>
+          <td>{{ user.is_active|yesno:"Active,Inactive" }}</td>
+          <td>{{ user.date_joined }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% else %}
+  <p>No users found.</p>
+{% endif %}

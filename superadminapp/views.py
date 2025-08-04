@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, logout, login as auth_login
 from django.contrib import messages
 from .forms import RegistrationForm, LoginForm, AdminRegistrationForm
 from .models import Account
+from django.contrib.auth import get_user_model
 
 
 def register_view(request):
@@ -124,8 +125,14 @@ def a_Login(request):
 
 # Dashboards
 def superadmin_dasboard_view(request):
-    return render(request, 'dashboards/dashboard.html')
-
+    if request.user.is_authenticated and request.user.roles == 'superadmin':
+        User = get_user_model()
+        users = Account.objects.all().order_by('-date_joined')
+        print("[DEBUG] Found users:", users)
+        return render(request, 'dashboards/dashboard.html', {'users': users}) 
+    else:
+        return redirect('login')
+    
 def admin_dashboard_view(request):
     return render(request, 'dashboards/admin_dashboard.html')
 
@@ -185,3 +192,5 @@ def admin_register_view(request):
         form = AdminRegistrationForm()
 
     return render(request, 'accounts/admin_register.html', {'form': form})
+
+
