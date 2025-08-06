@@ -33,3 +33,18 @@ class AdminRegistrationForm(forms.ModelForm):
     class Meta:
         model = Account
         fields = ['first_name', 'last_name', 'username', 'email', 'password','roles']
+        
+        
+class UserAdminRegistrationForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput)
+    confirm_password = forms.CharField(widget=forms.PasswordInput)
+
+    class Meta:
+        model = Account
+        fields = ['first_name', 'last_name', 'username', 'email', 'password','roles']
+        
+    def __init__(self, *args, **kwargs):
+        super(UserAdminRegistrationForm, self).__init__(*args, **kwargs)
+        self.fields['roles'].choices = [
+            (key, value) for key, value in self.fields['roles'].choices if key != 'superadmin'
+            ]

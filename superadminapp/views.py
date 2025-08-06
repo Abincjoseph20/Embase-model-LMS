@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, logout, login as auth_login
 from django.contrib import messages
-from .forms import RegistrationForm, LoginForm, AdminRegistrationForm
+from .forms import RegistrationForm, LoginForm, AdminRegistrationForm,UserAdminRegistrationForm
 from .models import Account
 from django.contrib.auth import get_user_model
 
@@ -194,3 +194,40 @@ def admin_register_view(request):
     return render(request, 'accounts/admin_register.html', {'form': form})
 
 
+def user_admin_register_view(request):
+    print("Admin register method:", request.method)
+    if request.method == 'POST':
+        print("Admin Register POST:", request.POST)
+        form = UserAdminRegistrationForm(request.POST)
+        if form.is_valid():
+            print("Form valid:", form.cleaned_data)
+            user = Account.objects.create_user(
+                first_name=form.cleaned_data['first_name'],
+                last_name=form.cleaned_data['last_name'],
+                username=form.cleaned_data['username'],
+                email=form.cleaned_data['email'],
+                password=form.cleaned_data['password'],
+                roles=form.cleaned_data['roles']
+            )
+
+            # Role permissions
+            if user.roles == 'admin':
+                user.is_staff = True
+                user.is_admin = True
+                user.is_approved = True
+                user.is_verified = True
+            elif user.roles in ['student', 'teacher', 'parent', 'guest']:
+                user.is_verified = True
+                user.is_approved = True
+
+            user.is_active = True
+            user.save()
+            print("Admin registered:", user.email)
+            messages.success(request, "Admin account registered successfully.")
+            return redirect('login')
+        else:
+            print("Admin form errors:", form.errors)
+    else:
+        form = UserAdminRegistrationForm()
+
+    return render(request, 'accounts/User_admin_register.html', {'form': form})
