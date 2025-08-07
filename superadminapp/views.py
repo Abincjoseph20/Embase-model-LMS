@@ -5,33 +5,80 @@ from .forms import RegistrationForm, LoginForm, AdminRegistrationForm,UserAdminR
 from .models import Account
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+import random
+from django.core.mail import send_mail
+from django.shortcuts import get_object_or_404
+
+
+def generate_otp():
+    return str(random.randint(100000, 999999))
 
 def register_view(request):
     if request.method == 'POST':
         print("Register POST:", request.POST)
         form = RegistrationForm(request.POST)
         if form.is_valid():
+            otp = generate_otp()
             user = Account.objects.create_user(
+                
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
                 username=form.cleaned_data['username'],
                 email=form.cleaned_data['email'],
                 password=form.cleaned_data['password'],
-                roles='student'  # default role or handle later
+                roles='student',  # default role or handle later
+                otp=otp, 
+                
             )
             
-            user.is_verified = True
-            user.is_approved = True
-            user.is_active = True
+            # Set other flags after creation
+            user.is_active = False
+            user.is_verified = False
+            user.is_approved = False
             user.save()
-            messages.success(request, "Registration successful. Please login.")
-            return redirect('login')
+            
+            
+            #https://youtu.be/Mezha1p_dTE?si=2ydAo_zpHRrEdCjS
+            send_mail(
+                subject='Your OTP Code',
+                message=f'Your OTP is: {otp}',
+                from_email='no-reply@example.com',  
+                recipient_list=[user.email],
+                fail_silently=False
+            )
+            
+            
+            # Store user ID in session to verify OTP later
+            request.session['pending_user_id'] = user.id
+            return redirect('verify_otp')
         else:
             print("Register form errors:", form.errors)
     else:
         form = RegistrationForm()
 
     return render(request, 'accounts/register.html', {'form': form})
+
+def verify_otp_view(request):
+    if request.method == 'POST':
+        input_otp = request.POST.get('otp')
+        user_id = request.session.get('pending_user_id')
+        user = get_object_or_404(Account, id=user_id)
+
+        if user.otp == input_otp:
+            user.is_verified = True
+            user.is_active = True
+            user.is_approved = True
+            user.otp = None  # Clear OTP
+            user.save()
+            del request.session['pending_user_id']
+            messages.success(request, 'Your account has been verified. You can now log in.')
+            return redirect('login')
+        else:
+            messages.error(request, 'Invalid OTP. Please try again.')
+
+    return render(request, 'accounts/verify_otp.html')
+
+
 
 
 def login_view(request):
