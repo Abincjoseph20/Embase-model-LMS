@@ -1,0 +1,26 @@
+
+<h2>Users You Registered</h2>
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>Username</th>
+            <th>Role</th>
+            <th>Date Joined</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>    
+            <td>{{ user.email }}</td>
+            <td>{{ user.username }}</td>
+            <td>{{ user.roles }}</td>
+            <td>{{ user.date_joined }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No users registered by you.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

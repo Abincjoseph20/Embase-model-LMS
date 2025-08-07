@@ -4,7 +4,7 @@ from django.contrib import messages
 from .forms import RegistrationForm, LoginForm, AdminRegistrationForm,UserAdminRegistrationForm
 from .models import Account
 from django.contrib.auth import get_user_model
-
+from django.contrib.auth.decorators import login_required
 
 def register_view(request):
     if request.method == 'POST':
@@ -193,29 +193,34 @@ def admin_register_view(request):
 
     return render(request, 'accounts/admin_register.html', {'form': form})
 
-
+@login_required
 def user_admin_register_view(request):
     print("Admin register method:", request.method)
+
     if request.method == 'POST':
         print("Admin Register POST:", request.POST)
         form = UserAdminRegistrationForm(request.POST)
+
         if form.is_valid():
             print("Form valid:", form.cleaned_data)
+
+            # Create user with registered_by field
             user = Account.objects.create_user(
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
                 username=form.cleaned_data['username'],
                 email=form.cleaned_data['email'],
                 password=form.cleaned_data['password'],
-                roles=form.cleaned_data['roles']
+                roles=form.cleaned_data['roles'],
+                registered_by=request.user 
             )
 
-            # Role permissions
+            # Set role-based flags
             if user.roles == 'admin':
                 user.is_staff = True
                 user.is_admin = True
-                user.is_approved = True
                 user.is_verified = True
+                user.is_approved = True
             elif user.roles in ['student', 'teacher', 'parent', 'guest']:
                 user.is_verified = True
                 user.is_approved = True
@@ -223,6 +228,7 @@ def user_admin_register_view(request):
             user.is_active = True
             user.save()
             print("Admin registered:", user.email)
+
             messages.success(request, "Admin account registered successfully.")
             return redirect('login')
         else:
@@ -231,3 +237,10 @@ def user_admin_register_view(request):
         form = UserAdminRegistrationForm()
 
     return render(request, 'accounts/User_admin_register.html', {'form': form})
+
+
+
+@login_required
+def my_registered_users(request):
+    users = Account.objects.filter(registered_by=request.user)
+    return render(request, 'tables/table.html', {'users': users})

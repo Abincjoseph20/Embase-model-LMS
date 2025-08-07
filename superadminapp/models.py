@@ -3,10 +3,10 @@ import random
 import string
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
-
+from django.conf import settings
 
 class MyAccountManager(BaseUserManager):
-    def create_user(self, first_name, last_name, username, email, password=None, otp=None, roles=None):
+    def create_user(self, first_name, last_name, username, email, password=None, otp=None, roles=None, registered_by=None):
         if not email:
             raise ValueError('User must have an email address')
 
@@ -21,6 +21,7 @@ class MyAccountManager(BaseUserManager):
             user_key=self.generate_unique_alphanumeric_key(),
             otp=otp,
             roles=roles, 
+            registered_by=registered_by,
         )
         user.set_password(password)
         user.save(using=self._db)
@@ -81,7 +82,7 @@ class Account(AbstractBaseUser):
     is_active = models.BooleanField(default=False)
     is_superadmin = models.BooleanField(default=False)
     is_approved = models.BooleanField(default=False)
-
+    registered_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='registered_users')
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'first_name', 'last_name']
 
