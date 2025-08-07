@@ -265,4 +265,4 @@ def my_registered_users(request):
     else:
         print("No users registered by this user.")
 
-    return render(request, 'tables/table.html', {'users': users})
+    return render(request, 'tables/admin_table.html', {'users': users})
