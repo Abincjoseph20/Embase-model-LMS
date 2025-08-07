@@ -19,23 +19,14 @@ def register_view(request):
         form = RegistrationForm(request.POST)
         if form.is_valid():
             otp = generate_otp()
-            user = Account.objects.create_user(
-                
-                first_name=form.cleaned_data['first_name'],
-                last_name=form.cleaned_data['last_name'],
-                username=form.cleaned_data['username'],
-                email=form.cleaned_data['email'],
-                password=form.cleaned_data['password'],
-                roles='student',  # default role or handle later
-                otp=otp, 
-                
-            )
-            
-            # Set other flags after creation
-            user.is_active = False
-            user.is_verified = False
-            user.is_approved = False
-            user.save()
+            request.session['registration_data'] = {
+                'first_name': form.cleaned_data['first_name'],
+                'last_name': form.cleaned_data['last_name'],
+                'username': form.cleaned_data['username'],
+                'email': form.cleaned_data['email'],
+                'password': form.cleaned_data['password'],  
+                'otp': otp
+            }
             
             
             #https://youtu.be/Mezha1p_dTE?si=2ydAo_zpHRrEdCjS
@@ -43,14 +34,11 @@ def register_view(request):
                 subject='Your OTP Code',
                 message=f'Your OTP is: {otp}',
                 from_email='no-reply@example.com',  
-                recipient_list=[user.email],
+                recipient_list=[form.cleaned_data['email']],
                 fail_silently=False
             )
-            
-            
-            # Store user ID in session to verify OTP later
-            request.session['pending_user_id'] = user.id
             return redirect('verify_otp')
+        
         else:
             print("Register form errors:", form.errors)
     else:
@@ -61,16 +49,40 @@ def register_view(request):
 def verify_otp_view(request):
     if request.method == 'POST':
         input_otp = request.POST.get('otp')
-        user_id = request.session.get('pending_user_id')
-        user = get_object_or_404(Account, id=user_id)
+        data = request.session.get('registration_data') 
+        
+        if not data:
+            messages.error(request, "No registration data found. Please register again.")
+            return redirect('register')
+        
+        if data['otp'] == input_otp:
+            # 🔒 Check if user already exists
+            if Account.objects.filter(email=data['email']).exists():
+                messages.error(request, "An account with this email already exists.")
+                return redirect('register')
 
-        if user.otp == input_otp:
+            if Account.objects.filter(username=data['username']).exists():
+                messages.error(request, "This username is already taken.")
+                return redirect('register')
+
+            user = Account.objects.create_user(
+                first_name=data['first_name'],
+                last_name=data['last_name'],
+                username=data['username'],
+                email=data['email'],
+                password=data['password'],
+                roles='student',
+                otp=data['otp'], 
+            )
+            
+
             user.is_verified = True
             user.is_active = True
             user.is_approved = True
-            user.otp = None  # Clear OTP
             user.save()
-            del request.session['pending_user_id']
+            
+            del request.session['registration_data']
+            
             messages.success(request, 'Your account has been verified. You can now log in.')
             return redirect('login')
         else:
