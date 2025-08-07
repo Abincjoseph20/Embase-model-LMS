@@ -16,6 +16,8 @@ urlpatterns = [
     
 
     path('admin_register/', views.admin_register_view, name='admin_register'),
+    path('super_admin_table_view/', views.super_admin_table_view, name='super_admin_table_view'),
+    
     path('user_admin_register/', views.user_admin_register_view, name='user_admin_register'),
     path('my_registered_users/', views.my_registered_users, name='my_registered_users'),
 ]

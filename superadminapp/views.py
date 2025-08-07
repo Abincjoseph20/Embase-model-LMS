@@ -125,13 +125,7 @@ def a_Login(request):
 
 # Dashboards
 def superadmin_dasboard_view(request):
-    if request.user.is_authenticated and request.user.roles == 'superadmin':
-        User = get_user_model()
-        users = Account.objects.all().order_by('-date_joined')
-        print("[DEBUG] Found users:", users)
-        return render(request, 'dashboards/dashboard.html', {'users': users}) 
-    else:
-        return redirect('login')
+    return render(request, 'dashboards/dashboard.html') 
     
 def admin_dashboard_view(request):
     return render(request, 'dashboards/admin_dashboard.html')
@@ -147,6 +141,16 @@ def parent_dashboard_view(request):
 
 def guest_dashboard_view(request):
     return render(request, 'dashboards/guest_dashboard.html')
+
+
+def super_admin_table_view(request):
+    if request.user.is_authenticated and request.user.roles == 'superadmin':
+        User = get_user_model()
+        users = Account.objects.all().order_by('-date_joined')
+        print("[DEBUG] Found users:", users)
+        return render(request, 'tables/superadmin_table.html', {'users': users}) 
+    else:
+        return redirect('login')
 
 
 def admin_register_view(request):
@@ -242,5 +246,23 @@ def user_admin_register_view(request):
 
 @login_required
 def my_registered_users(request):
+    print("\n=== Current Logged-in User ===")
+    print(f"ID: {request.user.id} | Email: {request.user.email}\n")
+
+    # Print all users with who registered them
+    print("=== All Users with registered_by ===")
+    all_users = Account.objects.all()
+    for user in all_users:
+        print(f"User: {user.email} | Registered By: {user.registered_by.email if user.registered_by else 'None'}")
+
+    # Filter by current user
     users = Account.objects.filter(registered_by=request.user)
+
+    print("\n=== Users registered by this admin ===")
+    if users.exists():
+        for u in users:
+            print(f"- {u.email} ({u.roles})")
+    else:
+        print("No users registered by this user.")
+
     return render(request, 'tables/table.html', {'users': users})
